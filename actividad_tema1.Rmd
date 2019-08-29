@@ -1,0 +1,349 @@
+---
+title: "Actividad Tema 1"
+author: "Desarrollo y Bienestar"
+date: "Curso 2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+```{r paquetes}
+# Cargo paquetes
+library(dplyr)
+library(extrafont)
+library(ggplot2)
+library(ggthemes)
+library(readr)
+library(readxl)
+library(tidyr)
+```
+
+
+```{r}
+# Cargo lo datos
+pwt <- read_excel("datos/pwt91.xlsx", sheet = 3)
+```
+
+```{r}
+# Selecciono variables de la base
+pwt <- pwt %>% 
+  select(pais = country, anio = year, pib = rgdpo, pob = pop, k = cn, h = hc, ptf = ctfp)
+```
+
+```{r}
+# Filtro países de interés
+pwt <- pwt %>% 
+  filter(pais %in% c("China", "United States"))
+```
+
+```{r}
+# Reescalo variable pib y creo pib per capita
+pwt <- pwt %>% 
+  mutate(pib = pib / 1000000, k = k / 1000000, pib_pc = pib * 1000000 / pob)
+```
+
+
+```{r PIB real}
+# Gráfico de PIB real
+pib_real <- pwt %>% 
+  ggplot(aes(x = anio, y = pib, col = pais)) +
+  geom_line(size = 1.5) +
+  labs(title = "Evolución del PIB real en China y EEUU",
+       subtitle = "en billones (PPP US$ 2011)", 
+       caption = "Fuente: Penn World Table",
+       x = "", y = "", col = "") +
+  scale_y_continuous(limits = c(0,20)) +
+  theme_economist_white(gray_bg = FALSE) +
+  scale_color_manual(values = c("#c22f45", "#7ad2f6"))
+
+# Guardo el gráfico
+ggsave(pib_real, file="figuras/pib_real.png")
+```
+
+```{r PIB real}
+pwt <- pwt %>% 
+  mutate(tasa_cr = (pib - lag(pib,1)) / lag(pib, 1) * 100)
+
+# Gráfico de PIB real
+crecimiento <- pwt %>% 
+  filter(pais == "China") %>% 
+  ggplot(aes(x = anio, y = tasa_cr)) +
+  geom_line(size = 1.5, color = "#c22f45") +
+  labs(title = "Tasa de crecimiento del PIB de China", 
+       caption = "Fuente: Penn World Table",
+       x = "", y = "", col = "") +
+  #scale_y_continuous(limits = c(0,20)) +
+  theme_economist_white(gray_bg = FALSE)
+
+# Guardo el gráfico
+ggsave(crecimiento, file="figuras/crecimiento_pib.png")
+```
+
+```{r PIB real pc}
+# Gráfico de PIB real
+pib_real_pc <- pwt %>% 
+  ggplot(aes(x = anio, y = pib_pc, col = pais)) +
+    geom_line(size = 1.5) +
+    labs(title = "Evolución del PIB real per cápita en China y EEUU",
+         subtitle = "PPP US$ 2011", 
+         caption = "Fuente: Penn World Table",
+         x = "", y = "", col = "") +
+    scale_y_continuous(limits = c(0,60000)) +
+    theme_economist_white(gray_bg = FALSE) +
+    scale_color_manual(values = c("#c22f45", "#7ad2f6"))
+
+# Guardo el gráfico
+ggsave(pib_real_pc, file="figuras/pib_real_pc.png")
+```
+
+```{r}
+# Gráfico stock de K
+ggplot(pwt, aes(x = anio, y = k, col = pais)) +
+  geom_line(size = 1.5) +
+  labs(title = "Stock de capital en China y EEUU",
+       subtitle = "en mil billones (PPP US$ 2011)", 
+       caption = "Fuente: Penn World Table",
+       x = "", y = "", col = "") +
+  theme_economist_white(gray_bg = FALSE) +
+  scale_color_manual(values = c("#c22f45", "#7ad2f6"))
+```
+
+```{r capital humano}
+# Gráfico stock de K humano
+pwt %>% 
+  ggplot(aes(x = anio, y = h, col = pais)) +
+    geom_line(size = 1.5) +
+    labs(title = "Índice de capital humano en China y EEUU",
+         caption = "Fuente: Penn World Table",
+         x = "", y = "", col = "") +
+    theme_economist_white(gray_bg = FALSE) +
+  scale_color_manual(values = c("#c22f45", "#7ad2f6"))
+```
+
+```{r PTF}
+# Gráfico stock de PTF
+pwt %>% 
+  filter(pais == "China") %>% 
+  ggplot(aes(x = anio, y = ptf)) +
+    geom_line(size = 1.5, color = "#c22f45") +
+    labs(title = "Productividad total de factores",
+         subtitle = "EEUU = 1",
+        caption = "Fuente: Penn World Table",
+        x = "", y = "", col = "") +
+    theme_economist_white(gray_bg = FALSE)
+```
+
+```{r PTF}
+# Gráfico stock de PTF
+pwt %>% 
+  filter(pais == "China", anio >= 2000) %>% 
+  ggplot(aes(x = anio, y = ptf)) +
+    geom_line(size = 1.5, color = "#c22f45") +
+    labs(title = "Productividad total de factores en China",
+         subtitle = "EEUU = 1",
+        caption = "Fuente: Penn World Table",
+        x = "", y = "", col = "") +
+    theme_economist_white(gray_bg = FALSE)
+```
+
+```{r datos ahorro}
+# Cargo lo datos
+ahorro_wide <- read_csv("datos/ny_adj_ictr_gn_zs.csv")
+# Paso la base de wide a long (reshape)
+ahorro_long <- gather(ahorro_wide, `1970`:`2017`, key = "anio", value = "savings")
+# Filtro base para quedarme sólo con China y EEUU desde los 70s
+ahorro_ch_us <- ahorro_long %>% 
+  filter(country %in% c("China", "United States"))
+# Convierto anio de factor a variable numérica
+ahorro_ch_us$anio <- as.numeric(ahorro_ch_us$anio)
+ahorro_ch_us$country <- as.factor(ahorro_ch_us$country)
+# Gráfico de las series
+ahorro_70 <- ahorro_ch_us %>% 
+  ggplot(aes(x = anio, y = savings, col = country)) +
+  geom_line(size = 1.5) +
+  labs(title = "Evolución del ahorro bruto en China y EEUU, 1970-2017",
+       subtitle = "% Ingreso Nacional Bruto", 
+       x = "año",
+       y = "ahorro",
+       col = "",
+       caption = "Fuente: Banco Mundial") +
+  theme_economist_white(gray_bg = FALSE, base_family = "Verdana") +
+  scale_color_economist(labels = c("China", "EEUU")) +
+  scale_color_manual(values = c("#c22f45", "#7ad2f6"))
+# Guardo el gráfico
+ggsave(ahorro_70, file="figuras/ahorro_70.png")
+```
+
+
+```{r datos inversion}
+# Cargo lo datos
+inversion_wide <- read_csv("datos/investments_percent_of_gdp.csv")
+# Paso la base de wide a long (reshape)
+inversion_long <- gather(inversion_wide, `1960`:`2017`, key = "anio", value = "invest")
+# Filtro base para quedarme sólo con China y EEUU desde los 70s
+inversion_ch_us <- inversion_long %>% 
+  filter(country %in% c("China", "United States"), anio >= 1970)
+# Convierto anio de factor a variable numérica
+inversion_ch_us$anio <- as.numeric(inversion_ch_us$anio)
+inversion_ch_us$country <- as.factor(inversion_ch_us$country)
+# Gráfico de las series
+inversion_70 <- inversion_ch_us %>% 
+  ggplot(aes(x = anio, y = invest, col = country)) +
+  geom_line(size = 1.5) +
+  labs(title = "Evolución de la inversión en China y EEUU, 1970-2017",
+       subtitle = "FBK como % PIB", 
+       x = "año",
+       y = "inversión",
+       col = "",
+       caption = "Fuente: Banco Mundial") +
+  theme_economist_white(gray_bg = FALSE, base_family = "Verdana") +
+  scale_color_economist(labels = c("China", "EEUU")) +
+  scale_color_manual(values = c("#c22f45", "#7ad2f6"))
+
+# Guardo el gráfico
+ggsave(inversion_70, file="figuras/inversion_70.png")
+```
+
+```{r datos poblacion urbana}
+# Cargo lo datos
+urban_wide <- read_csv("datos/urban_population_percent_of_total.csv")
+# Paso la base de wide a long (reshape)
+urban_long <- gather(urban_wide, `1960`:`2017`, key = "anio", value = "urban")
+# Filtro base para quedarme sólo con China y EEUU desde los 70s
+urban <- urban_long %>% 
+  filter(country %in% c("China", "United States"), anio >= 1970)
+# Convierto anio de factor a variable numérica
+urban$anio <- as.numeric(urban$anio)
+# Gráfico de las series
+urban_70 <- urban %>% 
+  ggplot(aes(x = anio, y = urban, col = country)) +
+  geom_line(size = 1.5) +
+  labs(title = "Urbanización en China y EEUU, 1970-2017",
+       subtitle = "% sobre total de la población",
+       x = "",
+       y = "",
+       col = "",
+       caption = "Fuente: Gapminder") +
+  theme_economist_white(gray_bg = FALSE, base_family = "Verdana") +
+  scale_color_manual(values = c("#c22f45", "#7ad2f6"))
+# Guardo el gráfico
+ggsave(urban_70, file="figuras/urban_70.png")
+```
+
+```{r datos r&d}
+# Cargo lo datos
+ryd_wide <- read_csv("datos/gb_xpd_rsdv_gd_zs.csv")
+# Paso la base de wide a long (reshape)
+ryd_long <- gather(ryd_wide, `1996`:`2017`, key = "anio", value = "ryd")
+# Filtro base para quedarme sólo con China y EEUU desde los 70s
+ryd <- ryd_long %>% 
+  filter(country %in% c("China", "United States"))
+# Convierto anio de factor a variable numérica
+ryd$anio <- as.numeric(ryd$anio)
+# Gráfico de las series
+ryd_70 <- ryd %>% 
+  ggplot(aes(x = anio, y = ryd, col = country)) +
+  geom_line(size = 1.5) +
+  labs(title = "I+D en China y EEUU, 1996-2017",
+       subtitle = "% PIB",
+       x = "",
+       y = "",
+       col = "",
+       caption = "Fuente: Gapminder") +
+  theme_economist_white(gray_bg = FALSE, base_family = "Verdana") +
+  scale_color_manual(values = c("#c22f45", "#7ad2f6"))
+# Guardo el gráfico
+ggsave(ryd_70, file="figuras/ryd_70.png")
+```
+
+```{r datos r&d}
+# Cargo lo datos
+agro <- read_csv("datos/agriculture_percent_of_gdp.csv")
+industria <- read_csv("datos/industry_percent_of_gdp.csv")
+servicios <- read_csv("datos/services_percent_of_gdp.csv")
+
+estr_prod_wide <- bind_rows(agro, industria, servicios, .id = "sector")
+
+# Paso la base de wide a long (reshape)
+estr_prod_long <- gather(estr_prod_wide, `1960`:`2017`, key = "anio", value = "valor")
+# Filtro base para quedarme sólo con China y EEUU desde los 70s
+estr_prod <- estr_prod_long %>% 
+  filter(country == "China")
+# Convierto anio de factor a variable numérica
+estr_prod$anio <- as.numeric(estr_prod$anio)
+estr_prod$sector <- factor(estr_prod$sector, levels = c(1:3), labels = c("agro", "industria", "servicios"))
+
+# Gráfico de las series
+estr_prod_60 <- estr_prod %>% 
+  ggplot(aes(x = anio, y = valor, col = sector)) +
+  geom_line(size = 1.5) +
+  labs(title = "Estructura productiva en China, 1960-2017",
+       subtitle = "% PIB",
+       x = "",
+       y = "",
+       col = "",
+       caption = "Fuente: Banco Mundial") +
+  theme_economist_white(gray_bg = FALSE, base_family = "Verdana") +
+  scale_color_manual(values = c("#014d64", "#7ad2f6", "#00887d"))
+
+# Guardo el gráfico
+ggsave(estr_prod_60, file="figuras/estr_prod_60.png")
+```
+
+```{r datos exportaciones}
+# Cargo lo datos
+export_wide <- read_csv("datos/merchandise_trade_percent_of_gdp.csv")
+
+# Paso la base de wide a long (reshape)
+export_long <- gather(export_wide, `1960`:`2017`, key = "anio", value = "valor")
+# Filtro base para quedarme sólo con China y EEUU desde los 70s
+export <- export_long %>% 
+  filter(country == "China")
+# Convierto anio de factor a variable numérica
+export$anio <- as.numeric(export$anio)
+# Gráfico de las series
+export_60 <- export %>% 
+  ggplot(aes(x = anio, y = valor)) +
+  geom_line(size = 1.5, color = "#c22f45") +
+  scale_x_continuous(limits = c(1960,2020)) +
+  labs(title = "Apertura al comercio internacional, 1960-2017",
+       subtitle = "importaciones + exportaciones como % PIB",
+       x = "",
+       y = "",
+       col = "",
+       caption = "Fuente: Banco Mundial") +
+  theme_economist_white(gray_bg = FALSE, base_family = "Verdana")
+
+# Guardo el gráfico
+ggsave(export_60, file="figuras/export_60.png")
+```
+
+```{r datos ied}
+# Cargo lo datos
+ied_wide <- read_csv("datos/foreign_direct_investment_net_inflows_percent_of_gdp.csv")
+# Paso la base de wide a long (reshape)
+ied_long <- gather(ied_wide, `1970`:`2017`, key = "anio", value = "ied")
+# Filtro base para quedarme sólo con China y EEUU desde los 70s
+ied <- ied_long %>% 
+  filter(country %in% c("China", "United States"))
+# Convierto anio de factor a variable numérica
+ied$anio <- as.numeric(ied$anio)
+
+# Gráfico de las series
+ied_70 <- ied %>% 
+  ggplot(aes(x = anio, y = ied, col = country)) +
+  geom_line(size = 1.5) +
+  labs(title = "Evolución de IED en China y EEUU, 1970-2017",
+       subtitle = "% PIB", 
+       x = "",
+       y = "",
+       col = "",
+       caption = "Fuente: Banco Mundial") +
+  theme_economist_white(gray_bg = FALSE, base_family = "Verdana") +
+  scale_color_economist(labels = c("China", "EEUU")) +
+  scale_color_manual(values = c("#c22f45", "#7ad2f6"))
+# Guardo el gráfico
+ggsave(ied_70, file="figuras/ied_70.png")
+```
