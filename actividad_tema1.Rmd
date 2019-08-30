@@ -62,25 +62,6 @@ pib_real <- pwt %>%
 ggsave(pib_real, file="figuras/pib_real.png")
 ```
 
-```{r PIB real}
-pwt <- pwt %>% 
-  mutate(tasa_cr = (pib - lag(pib,1)) / lag(pib, 1) * 100)
-
-# Gráfico de PIB real
-crecimiento <- pwt %>% 
-  filter(pais == "China") %>% 
-  ggplot(aes(x = anio, y = tasa_cr)) +
-  geom_line(size = 1.5, color = "#c22f45") +
-  labs(title = "Tasa de crecimiento del PIB de China", 
-       caption = "Fuente: Penn World Table",
-       x = "", y = "", col = "") +
-  #scale_y_continuous(limits = c(0,20)) +
-  theme_economist_white(gray_bg = FALSE)
-
-# Guardo el gráfico
-ggsave(crecimiento, file="figuras/crecimiento_pib.png")
-```
-
 ```{r PIB real pc}
 # Gráfico de PIB real
 pib_real_pc <- pwt %>% 
@@ -103,11 +84,14 @@ ggsave(pib_real_pc, file="figuras/pib_real_pc.png")
 ggplot(pwt, aes(x = anio, y = k, col = pais)) +
   geom_line(size = 1.5) +
   labs(title = "Stock de capital en China y EEUU",
-       subtitle = "en mil billones (PPP US$ 2011)", 
+       subtitle = "en billones (PPP US$ 2011)", 
        caption = "Fuente: Penn World Table",
        x = "", y = "", col = "") +
   theme_economist_white(gray_bg = FALSE) +
   scale_color_manual(values = c("#c22f45", "#7ad2f6"))
+
+# Guardo el gráfico
+ggsave(pib_real_pc, file="figuras/capital.png")
 ```
 
 ```{r capital humano}
@@ -135,7 +119,7 @@ pwt %>%
     theme_economist_white(gray_bg = FALSE)
 ```
 
-```{r PTF}
+```{r PTF_1}
 # Gráfico stock de PTF
 pwt %>% 
   filter(pais == "China", anio >= 2000) %>% 
@@ -258,7 +242,7 @@ ryd_70 <- ryd %>%
 ggsave(ryd_70, file="figuras/ryd_70.png")
 ```
 
-```{r datos r&d}
+```{r datos sectores}
 # Cargo lo datos
 agro <- read_csv("datos/agriculture_percent_of_gdp.csv")
 industria <- read_csv("datos/industry_percent_of_gdp.csv")
