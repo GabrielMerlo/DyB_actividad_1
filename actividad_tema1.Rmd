@@ -81,7 +81,7 @@ ggsave(pib_real_pc, file="figuras/pib_real_pc.png")
 
 ```{r}
 # Gráfico stock de K
-ggplot(pwt, aes(x = anio, y = k, col = pais)) +
+capital <- ggplot(pwt, aes(x = anio, y = k, col = pais)) +
   geom_line(size = 1.5) +
   labs(title = "Stock de capital en China y EEUU",
        subtitle = "en billones (PPP US$ 2011)", 
@@ -91,7 +91,7 @@ ggplot(pwt, aes(x = anio, y = k, col = pais)) +
   scale_color_manual(values = c("#c22f45", "#7ad2f6"))
 
 # Guardo el gráfico
-ggsave(pib_real_pc, file="figuras/capital.png")
+ggsave(capital, file="figuras/capital.png")
 ```
 
 ```{r capital humano}
